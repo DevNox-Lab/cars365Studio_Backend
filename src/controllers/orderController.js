@@ -39,6 +39,15 @@ const getOrderById = async (req, res) => {
       });
     }
 
+    // Check if this is a browser request (has Accept: text/html header)
+    const acceptHeader = req.get('accept') || '';
+    if (acceptHeader.includes('text/html')) {
+      // Redirect to frontend order details page
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      return res.redirect(`${frontendUrl}/order/${req.params.id}`);
+    }
+
+    // Return JSON for API requests
     res.status(200).json({
       success: true,
       data: order
