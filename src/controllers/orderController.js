@@ -8,14 +8,45 @@ const orderService = require('../services/orderService');
 const createOrder = async (req, res) => {
   try {
     const order = await orderService.createOrder(req.body);
+    const fetchUrl = `${req.protocol}://${req.get('host')}/api/orders/${order._id}`;
+    
     res.status(201).json({
       success: true,
+      fetchUrl: fetchUrl,
       data: order
     });
   } catch (error) {
     res.status(400).json({
       success: false,
       message: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Get order by ID
+ * @route   GET /api/orders/:id
+ * @access  Public
+ */
+const getOrderById = async (req, res) => {
+  try {
+    const order = await orderService.getOrderById(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: order
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: 'Invalid Order ID'
     });
   }
 };
@@ -43,5 +74,6 @@ const getOrders = async (req, res) => {
 
 module.exports = {
   createOrder,
-  getOrders
+  getOrders,
+  getOrderById
 };

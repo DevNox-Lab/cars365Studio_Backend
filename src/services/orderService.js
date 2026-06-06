@@ -18,7 +18,17 @@ const getAllOrders = async () => {
   return await Order.find().sort({ createdAt: -1 });
 };
 
+/**
+ * Get a single order by ID
+ * @param {string} id 
+ * @returns {Promise<Object>}
+ */
+const getOrderById = async (id) => {
+  return await Order.findById(id);
+};
+
 module.exports = {
   createOrder,
-  getAllOrders
+  getAllOrders,
+  getOrderById
 };
