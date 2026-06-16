@@ -48,6 +48,11 @@ const orderSchema = new mongoose.Schema({
       type: String,
       default: 'AED'
     }
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'active', 'completed'],
+    default: 'pending'
   }
 }, {
   timestamps: true

@@ -26,7 +26,7 @@ const createOrder = async (req, res) => {
 /**
  * @desc    Get order by ID
  * @route   GET /api/orders/:id
- * @access  Public
+ * @access  Admin
  */
 const getOrderById = async (req, res) => {
   try {
@@ -61,17 +61,24 @@ const getOrderById = async (req, res) => {
 };
 
 /**
- * @desc    Get all orders
+ * @desc    Get paginated orders
  * @route   GET /api/orders
- * @access  Public
+ * @access  Admin
  */
 const getOrders = async (req, res) => {
   try {
-    const orders = await orderService.getAllOrders();
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 10;
+
+    const result = await orderService.getOrdersPaginated(page, limit);
+
     res.status(200).json({
       success: true,
-      count: orders.length,
-      data: orders
+      count: result.count,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+      data: result.data
     });
   } catch (error) {
     res.status(500).json({

@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
+const authMiddleware = require('../middleware/authMiddleware');
 const { createOrder, getOrders, getOrderById } = require('../controllers/orderController');
 
 router.route('/')
-  .get(getOrders)
+  .get(authMiddleware, getOrders)
   .post(createOrder);
 
 router.route('/:id')
-  .get(getOrderById);
+  .get(authMiddleware, getOrderById);
 
 module.exports = router;
