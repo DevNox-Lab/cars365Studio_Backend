@@ -8,11 +8,48 @@ require('dotenv').config();
 
 const app = express();
 
-// Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true
-}));
+// CORS Configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    const frontendUrl = process.env.FRONTEND_URL;
+    const allowedOrigins = [
+      frontendUrl,
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:3000',
+    ].filter(Boolean);
+
+    // Log for debugging
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] CORS Request - Origin: ${origin || 'no-origin'}, Allowed: ${allowedOrigins.join(', ')}`);
+
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Check if origin is allowed
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      // Log rejected origins for debugging
+      console.warn(`[${timestamp}] CORS Rejected - Origin: ${origin}`);
+      callback(new Error('CORS not allowed'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  maxAge: 86400,
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
+
 app.use(express.json());
 
 // Request logging middleware
