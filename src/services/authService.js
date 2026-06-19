@@ -1,12 +1,12 @@
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/Admin");
 
-const signToken = (adminId) => {
+const signToken = (adminId, tokenVersion = 0) => {
   if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is not configured");
   }
 
-  return jwt.sign({ id: adminId }, process.env.JWT_SECRET, {
+  return jwt.sign({ id: adminId, tokenVersion }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "7d",
   });
 };
@@ -32,7 +32,7 @@ const loginAdmin = async ({ email, password }) => {
     throw error;
   }
 
-  const token = signToken(admin._id);
+  const token = signToken(admin._id, admin.tokenVersion || 0);
 
   return {
     token,
@@ -55,4 +55,20 @@ module.exports = {
   loginAdmin,
   getAdminById,
   signToken,
+  logoutAdmin: async (adminId) => {
+    if (!adminId) {
+      throw new Error("Admin ID is required for logout");
+    }
+
+    const admin = await Admin.findById(adminId).select("+tokenVersion");
+    if (!admin) {
+      const error = new Error("Admin not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    admin.tokenVersion = (admin.tokenVersion || 0) + 1;
+    await admin.save();
+    return { success: true };
+  },
 };

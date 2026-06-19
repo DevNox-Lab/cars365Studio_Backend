@@ -1,7 +1,15 @@
-const orderService = require('../services/orderService');
+const orderService = require("../services/orderService");
 
 const getStats = async (req, res, next) => {
   try {
+    // Strict auth check - must be logged in
+    if (!req.admin) {
+      return res.status(401).json({
+        success: false,
+        message: "Please login first",
+      });
+    }
+
     const stats = await orderService.getOrderStats();
 
     res.status(200).json({
@@ -9,28 +17,40 @@ const getStats = async (req, res, next) => {
       data: stats,
     });
   } catch (error) {
-    console.error('Error fetching stats:', error);
+    console.error("Error fetching stats:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch order statistics',
+      message: "Failed to fetch order statistics",
     });
   }
 };
 
 const getOrders = async (req, res, next) => {
   try {
+    // Strict auth check - must be logged in
+    if (!req.admin) {
+      return res.status(401).json({
+        success: false,
+        message: "Please login first",
+      });
+    }
+
     const { page, limit, search } = req.query;
-    const result = await orderService.getOrdersPaginated({ page, limit, search });
+    const result = await orderService.getOrdersPaginated({
+      page,
+      limit,
+      search,
+    });
 
     res.status(200).json({
       success: true,
       ...result,
     });
   } catch (error) {
-    console.error('Error fetching orders:', error);
+    console.error("Error fetching orders:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch orders',
+      message: "Failed to fetch orders",
     });
   }
 };

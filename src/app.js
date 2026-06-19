@@ -49,7 +49,6 @@ const corsOptions = {
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
-
 app.use(express.json());
 
 // Request logging middleware

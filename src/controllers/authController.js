@@ -64,7 +64,26 @@ const getMe = async (req, res, next) => {
   }
 };
 
+const logout = async (req, res, next) => {
+  try {
+    if (!req.admin) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
+    }
+
+    await authService.logoutAdmin(req.admin._id);
+
+    res.status(200).json({ success: true, message: "Logged out successfully" });
+  } catch (error) {
+    res
+      .status(error.statusCode || 500)
+      .json({ success: false, message: error.message || "Logout failed" });
+  }
+};
+
 module.exports = {
   login,
   getMe,
+  logout,
 };
