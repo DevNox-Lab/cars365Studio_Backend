@@ -92,7 +92,11 @@ const buildOrdersFilter = ({ search = '', status = '', dateFrom, dateTo, frequen
 };
 
 const createOrder = async (orderData) => {
-  const order = new Order(orderData);
+  const orderWithDefaults = {
+    ...orderData,
+    status: orderData.status || 'pending',
+  };
+  const order = new Order(orderWithDefaults);
   return order.save();
 };
 
@@ -133,6 +137,8 @@ const getOrderStats = async () => {
     totalOrders,
     completedOrders,
     pendingOrders,
+    cancelledOrders,
+    invoicedOrders,
     revenueResult,
     pendingAmountResult,
     activeOnSite,
@@ -140,21 +146,46 @@ const getOrderStats = async () => {
     Order.countDocuments(),
     Order.countDocuments({ status: 'complete' }),
     Order.countDocuments({ status: 'pending' }),
+    Order.countDocuments({ status: 'cancelled' }),
+    Order.countDocuments({ status: 'invoiced' }),
     Order.aggregate([
-      { $match: { status: { $ne: 'cancelled' } } },
-      { $group: { _id: null, totalRevenue: { $sum: '$services.totalPrice' } } },
+      {
+        $match: { status: { $nin: ['cancelled'] } },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: {
+            $sum: { $ifNull: ['$services.totalPrice', 0] },
+          },
+        },
+      },
     ]),
     Order.aggregate([
-      { $match: { status: 'pending' } },
-      { $group: { _id: null, pendingAmount: { $sum: '$services.totalPrice' } } },
+      {
+        $match: { status: 'pending' },
+      },
+      {
+        $group: {
+          _id: null,
+          pendingAmount: {
+            $sum: { $ifNull: ['$services.totalPrice', 0] },
+          },
+        },
+      },
     ]),
-    Order.countDocuments({ status: 'pending', visitDate: today }),
+    Order.countDocuments({
+      status: 'pending',
+      visitDate: today,
+    }),
   ]);
 
   return {
     totalOrders,
     completedOrders,
     pendingOrders,
+    cancelledOrders,
+    invoicedOrders,
     totalRevenue: revenueResult[0]?.totalRevenue || 0,
     pendingAmount: pendingAmountResult[0]?.pendingAmount || 0,
     activeOnSite,
