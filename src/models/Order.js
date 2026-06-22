@@ -1,46 +1,46 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const ORDER_STATUSES = ['pending', 'complete', 'invoiced', 'cancelled'];
+const ORDER_STATUSES = ["pending", "complete", "invoiced", "cancelled"];
 
 const orderSchema = new mongoose.Schema(
   {
-    orderNumber: {
+    invoiceNumber: {
       type: String,
       unique: true,
       sparse: true,
     },
     customerName: {
       type: String,
-      required: [true, 'Customer name is required'],
+      required: [true, "Customer name is required"],
       trim: true,
     },
     phoneNumber: {
       type: String,
-      required: [true, 'Phone number is required'],
+      required: [true, "Phone number is required"],
       trim: true,
     },
     address: {
       type: String,
       trim: true,
-      default: '',
+      default: "",
     },
     notes: {
       type: String,
       trim: true,
-      default: '',
+      default: "",
     },
     status: {
       type: String,
       enum: ORDER_STATUSES,
-      default: 'pending',
+      default: "pending",
     },
     visitDate: {
       type: String,
-      required: [true, 'Visit date is required'],
+      required: [true, "Visit date is required"],
     },
     visitTime: {
       type: String,
-      required: [true, 'Visit time is required'],
+      required: [true, "Visit time is required"],
     },
     vehicleInfo: {
       model: String,
@@ -71,21 +71,17 @@ const orderSchema = new mongoose.Schema(
       },
       currency: {
         type: String,
-        default: 'AED',
+        default: "AED",
       },
     },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-orderSchema.pre('save', async function generateOrderNumber() {
-  if (this.orderNumber) return;
+// `orderNumber` generation removed. Frontend provides `invoiceNumber` and
+// the backend no longer auto-generates `orderNumber`.
 
-  const count = await mongoose.model('Order').countDocuments();
-  this.orderNumber = `ORD-${1001 + count}`;
-});
-
-module.exports = mongoose.model('Order', orderSchema);
+module.exports = mongoose.model("Order", orderSchema);
 module.exports.ORDER_STATUSES = ORDER_STATUSES;

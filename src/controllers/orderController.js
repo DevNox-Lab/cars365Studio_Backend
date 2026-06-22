@@ -9,7 +9,6 @@ const { validateOrderData } = require("../utils/validators");
 const createOrder = async (req, res, next) => {
   try {
     const { isValid, errors } = validateOrderData(req.body);
-    console.log("Request body in orderController : ", req.body);
     if (!isValid) {
       return res.status(400).json({
         success: false,

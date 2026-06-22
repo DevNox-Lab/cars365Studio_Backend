@@ -1,5 +1,5 @@
-const Order = require('../models/Order');
-const { ORDER_STATUSES } = require('../models/Order');
+const Order = require("../models/Order");
+const { ORDER_STATUSES } = require("../models/Order");
 
 const getStartOfDay = (date = new Date()) => {
   const start = new Date(date);
@@ -26,19 +26,19 @@ const getEndOfDay = (date = new Date()) => {
   return end;
 };
 
-const buildSearchFilter = (search = '') => {
+const buildSearchFilter = (search = "") => {
   const trimmed = search.trim();
   if (!trimmed) return {};
 
-  const regex = new RegExp(trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+  const regex = new RegExp(trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
 
   return {
     $or: [
       { customerName: regex },
       { phoneNumber: regex },
-      { orderNumber: regex },
-      { 'vehicleInfo.model': regex },
-      { 'vehicleInfo.carType': regex },
+      { invoiceNumber: regex },
+      { "vehicleInfo.model": regex },
+      { "vehicleInfo.carType": regex },
       { address: regex },
       { notes: regex },
     ],
@@ -55,19 +55,19 @@ const buildDateFilter = ({ dateFrom, dateTo, frequency }) => {
     return filter;
   }
 
-  if (!frequency || frequency === 'all') return filter;
+  if (!frequency || frequency === "all") return filter;
 
   const now = new Date();
   let start;
 
   switch (frequency) {
-    case 'daily':
+    case "daily":
       start = getStartOfDay(now);
       break;
-    case 'weekly':
+    case "weekly":
       start = getStartOfWeek(now);
       break;
-    case 'monthly':
+    case "monthly":
       start = getStartOfMonth(now);
       break;
     default:
@@ -78,13 +78,19 @@ const buildDateFilter = ({ dateFrom, dateTo, frequency }) => {
   return filter;
 };
 
-const buildOrdersFilter = ({ search = '', status = '', dateFrom, dateTo, frequency }) => {
+const buildOrdersFilter = ({
+  search = "",
+  status = "",
+  dateFrom,
+  dateTo,
+  frequency,
+}) => {
   const filters = [
     buildSearchFilter(search),
     buildDateFilter({ dateFrom, dateTo, frequency }),
   ];
 
-  if (status && status !== 'all' && ORDER_STATUSES.includes(status)) {
+  if (status && status !== "all" && ORDER_STATUSES.includes(status)) {
     filters.push({ status });
   }
 
@@ -94,7 +100,7 @@ const buildOrdersFilter = ({ search = '', status = '', dateFrom, dateTo, frequen
 const createOrder = async (orderData) => {
   const orderWithDefaults = {
     ...orderData,
-    status: orderData.status || 'pending',
+    status: orderData.status || "pending",
   };
   const order = new Order(orderWithDefaults);
   return order.save();
@@ -112,18 +118,22 @@ const updateOrder = async (id, orderData) => {
 
 const updateOrderStatus = async (id, status) => {
   if (!ORDER_STATUSES.includes(status)) {
-    const error = new Error('Invalid order status');
+    const error = new Error("Invalid order status");
     error.statusCode = 400;
     throw error;
   }
 
-  return Order.findByIdAndUpdate(id, { status }, { new: true, runValidators: true });
+  return Order.findByIdAndUpdate(
+    id,
+    { status },
+    { new: true, runValidators: true },
+  );
 };
 
 const deleteOrder = async (id) => {
   const order = await Order.findByIdAndDelete(id);
   if (!order) {
-    const error = new Error('Order not found');
+    const error = new Error("Order not found");
     error.statusCode = 404;
     throw error;
   }
@@ -144,38 +154,38 @@ const getOrderStats = async () => {
     activeOnSite,
   ] = await Promise.all([
     Order.countDocuments(),
-    Order.countDocuments({ status: 'complete' }),
-    Order.countDocuments({ status: 'pending' }),
-    Order.countDocuments({ status: 'cancelled' }),
-    Order.countDocuments({ status: 'invoiced' }),
+    Order.countDocuments({ status: "complete" }),
+    Order.countDocuments({ status: "pending" }),
+    Order.countDocuments({ status: "cancelled" }),
+    Order.countDocuments({ status: "invoiced" }),
     Order.aggregate([
       {
-        $match: { status: { $nin: ['cancelled'] } },
+        $match: { status: { $nin: ["cancelled"] } },
       },
       {
         $group: {
           _id: null,
           totalRevenue: {
-            $sum: { $ifNull: ['$services.totalPrice', 0] },
+            $sum: { $ifNull: ["$services.totalPrice", 0] },
           },
         },
       },
     ]),
     Order.aggregate([
       {
-        $match: { status: 'pending' },
+        $match: { status: "pending" },
       },
       {
         $group: {
           _id: null,
           pendingAmount: {
-            $sum: { $ifNull: ['$services.totalPrice', 0] },
+            $sum: { $ifNull: ["$services.totalPrice", 0] },
           },
         },
       },
     ]),
     Order.countDocuments({
-      status: 'pending',
+      status: "pending",
       visitDate: today,
     }),
   ]);
@@ -195,16 +205,22 @@ const getOrderStats = async () => {
 const getOrdersPaginated = async ({
   page = 1,
   limit = 10,
-  search = '',
-  status = '',
-  dateFrom = '',
-  dateTo = '',
-  frequency = 'all',
+  search = "",
+  status = "",
+  dateFrom = "",
+  dateTo = "",
+  frequency = "all",
 }) => {
   const parsedPage = Math.max(parseInt(page, 10) || 1, 1);
   const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
   const skip = (parsedPage - 1) * parsedLimit;
-  const filter = buildOrdersFilter({ search, status, dateFrom, dateTo, frequency });
+  const filter = buildOrdersFilter({
+    search,
+    status,
+    dateFrom,
+    dateTo,
+    frequency,
+  });
 
   const [orders, total] = await Promise.all([
     Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parsedLimit),
