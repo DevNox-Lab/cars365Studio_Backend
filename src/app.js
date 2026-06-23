@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const connectDB = require("./config/db");
 const orderRoutes = require("./routes/orderRoutes");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
@@ -50,6 +51,24 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(express.json());
+
+// DB connection middleware — ensures MongoDB is connected before every request.
+// connectDB() is idempotent (no-ops when readyState >= 1), so warm invocations
+// on Vercel are instant. This is the correct pattern for serverless environments
+// where module-level await is not reliable.
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    const timestamp = new Date().toISOString();
+    console.error(`[${timestamp}] DB connection failed:`, err.message);
+    return res.status(500).json({
+      success: false,
+      message: "Database connection failed. Please try again.",
+    });
+  }
+});
 
 // Request logging middleware
 app.use((req, res, next) => {
