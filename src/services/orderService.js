@@ -196,7 +196,9 @@ const getOrderStats = async () => {
     pendingOrders,
     cancelledOrders,
     invoicedOrders,
-    totalRevenue: revenueResult[0]?.totalRevenue || 0,
+    totalRevenue:
+      revenueResult[0]?.totalRevenue - pendingAmountResult[0]?.pendingAmount ||
+      0,
     pendingAmount: pendingAmountResult[0]?.pendingAmount || 0,
     activeOnSite,
   };
